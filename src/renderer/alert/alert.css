@@ -25,6 +25,31 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
+.btn-top-close {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  background-color: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 10px 20px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-top-close:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
 /* Header */
 .alert-header {
   display: flex;

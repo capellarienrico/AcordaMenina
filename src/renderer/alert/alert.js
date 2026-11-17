@@ -111,28 +111,34 @@ function renderAlert(data) {
   countdownInterval = setInterval(updateCountdown, 1000);
 }
 
+function closeAlert() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  if (window.api) {
+    const id = currentEvent ? currentEvent.id : 'dismiss';
+    window.api.dismissAlert(id);
+  }
+}
+
 // Ações
 btnAction.addEventListener('click', () => {
-  if (!currentEvent) return;
-  if (currentEvent.videoLink) {
+  if (currentEvent && currentEvent.videoLink) {
     window.api.openLink(currentEvent.videoLink);
   } else {
-    window.api.dismissAlert(currentEvent.id);
+    closeAlert();
   }
 });
 
-btnDismiss.addEventListener('click', () => {
-  if (currentEvent) {
-    window.api.dismissAlert(currentEvent.id);
-  }
-});
+btnDismiss.addEventListener('click', closeAlert);
+
+const btnCloseOverlay = document.getElementById('btn-close-overlay');
+if (btnCloseOverlay) {
+  btnCloseOverlay.addEventListener('click', closeAlert);
+}
 
 // Atalhos de teclado (ESC = dispensar, Enter = entrar na reunião)
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (currentEvent) {
-      window.api.dismissAlert(currentEvent.id);
-    }
+    closeAlert();
   } else if (e.key === 'Enter') {
     btnAction.click();
   }

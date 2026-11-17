@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, Notification } = require('electron');
 const path = require('path');
 const store = require('./store');
 const calendarService = require('./calendar-service');
@@ -54,7 +54,7 @@ function createAlertWindow() {
   });
 
   alertWindow.loadFile(path.join(__dirname, '../renderer/alert/alert.html'));
-  alertWindow.setAlwaysOnTop(true, 'screen-saver');
+  alertWindow.setAlwaysOnTop(true, 'floating');
 
   alertWindow.on('close', (e) => {
     if (!app.isQuitting) {
@@ -70,8 +70,8 @@ function createSettingsWindow() {
   const icon = getAppIcon();
 
   settingsWindow = new BrowserWindow({
-    width: 800,
-    height: 700,
+    width: 820,
+    height: 720,
     minWidth: 680,
     minHeight: 550,
     center: true,
@@ -90,10 +90,23 @@ function createSettingsWindow() {
 
   settingsWindow.loadFile(path.join(__dirname, '../renderer/settings/index.html'));
 
+  settingsWindow.once('ready-to-show', () => {
+    settingsWindow.show();
+    settingsWindow.focus();
+  });
+
   settingsWindow.on('close', (e) => {
     if (!app.isQuitting) {
       e.preventDefault();
       settingsWindow.hide();
+
+      if (Notification.isSupported()) {
+        new Notification({
+          title: 'AcordaMenina',
+          body: 'O aplicativo continua ativo na bandeja do sistema para monitorar suas reuniões.',
+          icon: icon || undefined
+        }).show();
+      }
     }
   });
 }
@@ -111,7 +124,7 @@ function showAlertForEvent(event) {
   win.webContents.send('alert-triggered', alertData);
   win.show();
   win.focus();
-  win.setAlwaysOnTop(true, 'screen-saver');
+  win.setAlwaysOnTop(true, 'floating');
 }
 
 async function performSync() {
