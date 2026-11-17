@@ -1,8 +1,14 @@
 let currentConfig = null;
+let currentEventsList = [];
 
 // Elementos
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanes = document.querySelectorAll('.tab-pane');
+
+// Elementos Agenda
+const eventsListContainer = document.getElementById('events-list-container');
+const agendaSubtitle = document.getElementById('agenda-subtitle');
+const btnAgendaSync = document.getElementById('btn-agenda-sync');
 
 // Inputs Geral
 const cfgStartup = document.getElementById('cfg-startup');
@@ -35,19 +41,158 @@ const btnSave = document.getElementById('btn-save');
 const syncStatusText = document.getElementById('sync-status-text');
 
 // Navegação de Abas
-tabButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    tabButtons.forEach(b => b.classList.remove('active'));
-    tabPanes.forEach(p => p.classList.remove('active'));
-
-    btn.classList.add('active');
-    const tabId = `tab-${btn.dataset.tab}`;
-    const targetPane = document.getElementById(tabId);
-    if (targetPane) {
-      targetPane.classList.add('active');
+function selectTab(tabName) {
+  tabButtons.forEach(b => {
+    if (b.dataset.tab === tabName) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
     }
   });
+
+  tabPanes.forEach(p => {
+    if (p.id === `tab-${tabName}`) {
+      p.classList.add('active');
+    } else {
+      p.classList.remove('active');
+    }
+  });
+
+  if (tabName === 'agenda') {
+    loadAndRenderEvents();
+  }
+}
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectTab(btn.dataset.tab);
+  });
 });
+
+// Renderizar Agenda
+async function loadAndRenderEvents() {
+  if (!window.api) return;
+
+  try {
+    currentEventsList = await window.api.getEvents();
+    renderAgendaEvents();
+  } catch (err) {
+    console.error('Erro ao buscar eventos:', err);
+  }
+}
+
+function renderAgendaEvents() {
+  eventsListContainer.innerHTML = '';
+
+  if (!currentEventsList || currentEventsList.length === 0) {
+    agendaSubtitle.textContent = 'Nenhuma reunião agendada para os próximos dias.';
+    eventsListContainer.innerHTML = `
+      <div style="padding: 24px; background-color: var(--bg-card); border-radius: 10px; border: 1px dashed var(--border-color); text-align: center; color: var(--text-muted);">
+        <p style="font-size: 15px; margin-bottom: 8px;">Nenhum compromisso encontrado.</p>
+        <p style="font-size: 13px;">Verifique se a sua agenda está cadastrada e ativada na aba <b>Calendários</b> ou clique em <b>Sincronizar</b>.</p>
+      </div>
+    `;
+    return;
+  }
+
+  agendaSubtitle.textContent = `${currentEventsList.length} compromisso(s) sincronizado(s).`;
+
+  // Agrupar por data (Hoje, Amanhã, Data)
+  const groups = {};
+  const now = new Date();
+  const todayStr = now.toDateString();
+
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowStr = tomorrow.toDateString();
+
+  currentEventsList.forEach(ev => {
+    const evDate = new Date(ev.start);
+    const evDateStr = evDate.toDateString();
+
+    let groupTitle = '';
+    if (evDateStr === todayStr) {
+      groupTitle = 'Hoje';
+    } else if (evDateStr === tomorrowStr) {
+      groupTitle = 'Amanhã';
+    } else {
+      groupTitle = evDate.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    if (!groups[groupTitle]) {
+      groups[groupTitle] = [];
+    }
+    groups[groupTitle].push(ev);
+  });
+
+  for (const title in groups) {
+    const dayGroup = document.createElement('div');
+    dayGroup.className = 'event-day-group';
+
+    const dayTitleEl = document.createElement('div');
+    dayTitleEl.className = 'event-day-title';
+    dayTitleEl.textContent = title;
+    dayGroup.appendChild(dayTitleEl);
+
+    groups[title].forEach(ev => {
+      const card = document.createElement('div');
+      card.className = 'event-card';
+
+      const startDate = new Date(ev.start);
+      const endDate = ev.end ? new Date(ev.end) : null;
+      const isNow = now >= startDate && endDate && now <= endDate;
+      if (isNow) {
+        card.classList.add('happening-now');
+      }
+
+      const startTimeStr = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const endTimeStr = endDate ? endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+      let videoButtonHtml = '';
+      if (ev.videoLink) {
+        videoButtonHtml = `
+          <button class="btn-meet btn-open-video" data-url="${escapeHtml(ev.videoLink)}">
+            📹 Entrar no ${escapeHtml(ev.videoPlatform || 'Meet')}
+          </button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="event-card-left">
+          <div class="event-card-time">
+            <span class="event-time-start">${startTimeStr}</span>
+            <span class="event-time-end">${endTimeStr || 'Início'}</span>
+          </div>
+          <div class="event-card-details">
+            <h4>${escapeHtml(ev.title || 'Sem título')}</h4>
+            <div class="event-badges">
+              <span class="badge-cal">${escapeHtml(ev.calendarName || 'Google Agenda')}</span>
+              ${ev.videoPlatform ? `<span class="badge-video">📹 ${escapeHtml(ev.videoPlatform)}</span>` : ''}
+              ${isNow ? '<span style="color: #22c55e; font-weight: 700;">• Em andamento</span>' : ''}
+            </div>
+          </div>
+        </div>
+        <div>
+          ${videoButtonHtml}
+        </div>
+      `;
+
+      dayGroup.appendChild(card);
+    });
+
+    eventsListContainer.appendChild(dayGroup);
+  }
+
+  // Listeners de clique nos links de vídeo
+  document.querySelectorAll('.btn-open-video').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const url = e.currentTarget.dataset.url;
+      if (url && window.api) {
+        window.api.openLink(url);
+      }
+    });
+  });
+}
 
 // Renderizar Calendários
 function renderCalendars() {
@@ -114,6 +259,13 @@ async function init() {
   if (window.api) {
     currentConfig = await window.api.getConfig();
 
+    // Carrega eventos da agenda
+    loadAndRenderEvents();
+
+    window.api.onShowAgendaTab(() => {
+      selectTab('agenda');
+    });
+
     // Preenche Geral
     const gen = currentConfig.general || {};
     cfgStartup.checked = gen.startup !== false;
@@ -139,6 +291,19 @@ async function init() {
     cfgAllDayTime.value = flt.allDayTime || '09:00';
   }
 }
+
+btnAgendaSync.addEventListener('click', async () => {
+  if (window.api) {
+    agendaSubtitle.textContent = 'Sincronizando compromissos...';
+    try {
+      const res = await window.api.syncCalendars();
+      currentEventsList = res.events || [];
+      renderAgendaEvents();
+    } catch (e) {
+      agendaSubtitle.textContent = 'Erro ao sincronizar.';
+    }
+  }
+});
 
 // Adicionar Novo Calendário
 btnAddCalendar.addEventListener('click', () => {

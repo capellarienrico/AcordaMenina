@@ -9,14 +9,17 @@
 
   <header>
     <div class="tabs-nav">
-      <button class="tab-btn active" data-tab="general">
+      <button class="tab-btn active" data-tab="agenda">
+        🗓️ Agenda
+      </button>
+      <button class="tab-btn" data-tab="general">
         ⚙️ Geral
       </button>
       <button class="tab-btn" data-tab="calendars">
         📅 Calendários
       </button>
       <button class="tab-btn" data-tab="filters">
-        🔍 Filtros de Eventos
+        🔍 Filtros
       </button>
     </div>
     <div>
@@ -27,8 +30,27 @@
   </header>
 
   <main>
+    <!-- ABA AGENDA (EVENTOS) -->
+    <section id="tab-agenda" class="tab-pane active">
+      <div class="calendars-header">
+        <div>
+          <h3>Próximos Compromissos</h3>
+          <p id="agenda-subtitle" style="font-size: 13px; color: var(--text-muted);">Carregando eventos do seu calendário...</p>
+        </div>
+        <div>
+          <button id="btn-agenda-sync" class="btn btn-sm btn-secondary">
+            🔄 Sincronizar
+          </button>
+        </div>
+      </div>
+
+      <div id="events-list-container" class="events-list">
+        <!-- Eventos renderizados via JavaScript -->
+      </div>
+    </section>
+
     <!-- ABA GERAL -->
-    <section id="tab-general" class="tab-pane active">
+    <section id="tab-general" class="tab-pane">
       <div class="setting-card">
         <div class="setting-info">
           <div class="setting-icon">👤</div>

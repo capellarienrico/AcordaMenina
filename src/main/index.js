@@ -175,17 +175,26 @@ function createTray() {
     tray = new Tray(icon || nativeImage.createEmpty());
     tray.setToolTip('AcordaMenina - Alertas de Reuniões');
 
+    tray.on('click', () => {
+      if (!settingsWindow) {
+        createSettingsWindow();
+        return;
+      }
+      if (settingsWindow.isVisible()) {
+        settingsWindow.focus();
+      } else {
+        settingsWindow.show();
+        settingsWindow.focus();
+      }
+      // Avisa o renderer para focar na aba de agenda
+      settingsWindow.webContents.send('show-agenda-tab');
+    });
+
     tray.on('double-click', () => {
       if (settingsWindow) {
         settingsWindow.show();
         settingsWindow.focus();
-      }
-    });
-
-    tray.on('click', () => {
-      if (settingsWindow) {
-        settingsWindow.show();
-        settingsWindow.focus();
+        settingsWindow.webContents.send('show-agenda-tab');
       }
     });
 
@@ -198,21 +207,44 @@ function createTray() {
 function updateTrayMenu() {
   if (!tray) return;
 
-  const nextEvent = currentEvents && currentEvents.length > 0 ? currentEvents[0] : null;
-  const nextEventTitle = nextEvent
-    ? `Próxima: ${nextEvent.title.substring(0, 25)}`
-    : 'Nenhuma reunião próxima';
-
-  const contextMenu = Menu.buildFromTemplate([
+  const menuItems = [
     { label: '⏰ AcordaMenina', enabled: false },
-    { type: 'separator' },
-    { label: nextEventTitle, enabled: false },
+    { type: 'separator' }
+  ];
+
+  if (currentEvents && currentEvents.length > 0) {
+    menuItems.push({ label: '📅 Próximos Compromissos:', enabled: false });
+
+    currentEvents.slice(0, 5).forEach((ev) => {
+      const timeStr = ev.start ? new Date(ev.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+      const label = `${timeStr} - ${ev.title.substring(0, 22)}${ev.title.length > 22 ? '...' : ''}`;
+
+      menuItems.push({
+        label: label,
+        click: () => {
+          if (ev.videoLink) {
+            shell.openExternal(ev.videoLink);
+          } else if (settingsWindow) {
+            settingsWindow.show();
+            settingsWindow.focus();
+            settingsWindow.webContents.send('show-agenda-tab');
+          }
+        }
+      });
+    });
+    menuItems.push({ type: 'separator' });
+  } else {
+    menuItems.push({ label: 'Nenhuma reunião próxima', enabled: false });
+    menuItems.push({ type: 'separator' });
+  }
+
+  menuItems.push(
     {
-      label: 'Sincronizar agora',
+      label: '🔄 Sincronizar Agora',
       click: () => performSync()
     },
     {
-      label: 'Testar alerta em tela cheia',
+      label: '🔔 Testar Alerta em Tela Cheia',
       click: () => {
         showAlertForEvent({
           id: 'test-now',
@@ -227,29 +259,34 @@ function updateTrayMenu() {
     },
     { type: 'separator' },
     {
-      label: 'Abrir Configurações',
+      label: '⚙️ Abrir AcordaMenina',
       click: () => {
         if (settingsWindow) {
           settingsWindow.show();
           settingsWindow.focus();
+          settingsWindow.webContents.send('show-agenda-tab');
         }
       }
     },
     {
-      label: 'Sair do AcordaMenina',
+      label: '❌ Sair do AcordaMenina',
       click: () => {
         app.isQuitting = true;
         app.quit();
       }
     }
-  ]);
+  );
 
-  tray.setContextMenu(contextMenu);
+  tray.setContextMenu(Menu.buildFromTemplate(menuItems));
 }
 
 // IPC Handlers
 ipcMain.handle('get-config', () => {
   return store.getAll();
+});
+
+ipcMain.handle('get-events', () => {
+  return currentEvents || [];
 });
 
 ipcMain.handle('save-config', (event, newConfig) => {
