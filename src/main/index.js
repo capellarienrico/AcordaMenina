@@ -11,7 +11,7 @@ let scheduler = null;
 let currentEvents = [];
 let syncIntervalTimer = null;
 
-// Evitar múltiplas instâncias
+// Garante apenas uma instância
 const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
   app.quit();
@@ -25,10 +25,21 @@ if (!gotTheLock) {
   });
 }
 
+function getAppIcon() {
+  const icoPath = path.join(__dirname, '../assets/icon.ico');
+  try {
+    return nativeImage.createFromPath(icoPath);
+  } catch (e) {
+    return null;
+  }
+}
+
 function createAlertWindow() {
+  if (alertWindow && !alertWindow.isDestroyed()) {
+    return alertWindow;
+  }
+
   alertWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
     fullscreen: true,
     alwaysOnTop: true,
     frame: false,
@@ -51,18 +62,25 @@ function createAlertWindow() {
       alertWindow.hide();
     }
   });
+
+  return alertWindow;
 }
 
 function createSettingsWindow() {
+  const icon = getAppIcon();
+
   settingsWindow = new BrowserWindow({
-    width: 780,
-    height: 680,
-    minWidth: 640,
-    minHeight: 520,
+    width: 800,
+    height: 700,
+    minWidth: 680,
+    minHeight: 550,
+    center: true,
     frame: true,
     title: 'AcordaMenina - Configurações',
     backgroundColor: '#18181b',
-    show: false,
+    icon: icon || undefined,
+    show: true,
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
@@ -81,9 +99,7 @@ function createSettingsWindow() {
 }
 
 function showAlertForEvent(event) {
-  if (!alertWindow) {
-    createAlertWindow();
-  }
+  const win = createAlertWindow();
 
   const general = store.get('general');
   const alertData = {
@@ -92,24 +108,29 @@ function showAlertForEvent(event) {
     snoozeDurations: general.snoozeDurations || [1, 3, 5]
   };
 
-  alertWindow.webContents.send('alert-triggered', alertData);
-  alertWindow.show();
-  alertWindow.focus();
-  alertWindow.setAlwaysOnTop(true, 'screen-saver');
+  win.webContents.send('alert-triggered', alertData);
+  win.show();
+  win.focus();
+  win.setAlwaysOnTop(true, 'screen-saver');
 }
 
 async function performSync() {
-  console.log('Sincronizando calendários...');
-  const calConfig = store.get('calendars');
-  const accounts = calConfig.accounts || [];
+  try {
+    const calConfig = store.get('calendars');
+    const accounts = calConfig.accounts || [];
 
-  currentEvents = await calendarService.fetchAllCalendars(accounts);
-  console.log(`Encontrados ${currentEvents.length} eventos futuros.`);
+    currentEvents = await calendarService.fetchAllCalendars(accounts);
+    console.log(`Encontrados ${currentEvents.length} eventos futuros.`);
 
-  const general = store.get('general');
-  const filters = store.get('eventFilters');
-  scheduler.scheduleEvents(currentEvents, general, filters);
-  updateTrayMenu();
+    const general = store.get('general');
+    const filters = store.get('eventFilters');
+    if (scheduler) {
+      scheduler.scheduleEvents(currentEvents, general, filters);
+    }
+    updateTrayMenu();
+  } catch (err) {
+    console.error('Erro na sincronização:', err);
+  }
 }
 
 function setupSyncInterval() {
@@ -136,25 +157,29 @@ function updateAutoLaunch(enabled) {
 }
 
 function createTray() {
-  // Criação de um ícone minimalista em buffer caso não exista arquivo
-  const iconCanvas = nativeImage.createFromBuffer(
-    Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAExJREFUOE9jZKAQMFKon2HUAAYGxv9QmpHBgZGBgYFh1ACwAcTAoRkY/kMZDJpPjBgGkAz/j4bByAEMDAwMBgYGBvg0g9xL5PqDEgAAdBwOC1bOq5kAAAAASUVORK5CYII=',
-      'base64'
-    )
-  );
+  try {
+    const icon = getAppIcon();
+    tray = new Tray(icon || nativeImage.createEmpty());
+    tray.setToolTip('AcordaMenina - Alertas de Reuniões');
 
-  tray = new Tray(iconCanvas);
-  tray.setToolTip('AcordaMenina - Alertas de Reuniões');
+    tray.on('double-click', () => {
+      if (settingsWindow) {
+        settingsWindow.show();
+        settingsWindow.focus();
+      }
+    });
 
-  tray.on('double-click', () => {
-    if (settingsWindow) {
-      settingsWindow.show();
-      settingsWindow.focus();
-    }
-  });
+    tray.on('click', () => {
+      if (settingsWindow) {
+        settingsWindow.show();
+        settingsWindow.focus();
+      }
+    });
 
-  updateTrayMenu();
+    updateTrayMenu();
+  } catch (err) {
+    console.error('Erro ao inicializar Tray:', err);
+  }
 }
 
 function updateTrayMenu() {
@@ -162,7 +187,7 @@ function updateTrayMenu() {
 
   const nextEvent = currentEvents && currentEvents.length > 0 ? currentEvents[0] : null;
   const nextEventTitle = nextEvent
-    ? `Próxima: ${nextEvent.title.substring(0, 20)}...`
+    ? `Próxima: ${nextEvent.title.substring(0, 25)}`
     : 'Nenhuma reunião próxima';
 
   const contextMenu = Menu.buildFromTemplate([
@@ -189,7 +214,7 @@ function updateTrayMenu() {
     },
     { type: 'separator' },
     {
-      label: 'Configurações',
+      label: 'Abrir Configurações',
       click: () => {
         if (settingsWindow) {
           settingsWindow.show();
@@ -198,7 +223,7 @@ function updateTrayMenu() {
       }
     },
     {
-      label: 'Sair',
+      label: 'Sair do AcordaMenina',
       click: () => {
         app.isQuitting = true;
         app.quit();
@@ -281,16 +306,12 @@ app.whenReady().then(() => {
   });
 
   createTray();
-  createAlertWindow();
   createSettingsWindow();
-
-  // Exibir a janela de configurações na primeira vez
-  settingsWindow.show();
 
   setupSyncInterval();
   performSync();
 });
 
 app.on('window-all-closed', (e) => {
-  e.preventDefault(); // Manter rodando na bandeja
+  e.preventDefault();
 });
