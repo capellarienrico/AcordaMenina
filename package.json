@@ -1,11 +1,35 @@
 {
   "name": "acorda-menina",
   "version": "1.0.0",
-  "description": "Aplicativo de produtividade e alertas de reuniões em tela cheia, sem limites de calendários.",
+  "description": "Aplicativo de produtividade e alertas de reuniões em tela cheia com sincronização de múltiplos calendários Google, sem limites.",
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "electron-builder --win",
+    "build:portable": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.capellarienrico.acordamenina",
+    "productName": "AcordaMenina",
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    }
   },
   "keywords": [
     "calendar",
@@ -19,7 +43,8 @@
   "author": "capellarienrico",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^33.2.1"
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "node-ical": "^0.20.1"
