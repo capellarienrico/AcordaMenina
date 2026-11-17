@@ -9,6 +9,7 @@ const tabPanes = document.querySelectorAll('.tab-pane');
 const eventsListContainer = document.getElementById('events-list-container');
 const agendaSubtitle = document.getElementById('agenda-subtitle');
 const btnAgendaSync = document.getElementById('btn-agenda-sync');
+const agendaDateFilter = document.getElementById('agenda-date-filter');
 
 // Inputs Geral
 const cfgStartup = document.getElementById('cfg-startup');
@@ -101,18 +102,48 @@ function renderAgendaEvents() {
     return;
   }
 
-  agendaSubtitle.textContent = `${currentEventsList.length} compromisso(s) sincronizado(s).`;
+  const now = new Date();
+  const filterType = agendaDateFilter ? agendaDateFilter.value : '7days';
+
+  // Calcular data limite
+  let maxDate = new Date(now);
+  if (filterType === 'today') {
+    maxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  } else if (filterType === '3days') {
+    maxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3, 23, 59, 59, 999);
+  } else {
+    // 7days
+    maxDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 23, 59, 59, 999);
+  }
+
+  const filteredEvents = currentEventsList.filter(ev => {
+    const evDate = new Date(ev.start);
+    return evDate <= maxDate;
+  });
+
+  if (filteredEvents.length === 0) {
+    const periodLabel = filterType === 'today' ? 'no dia atual' : (filterType === '3days' ? 'nos próximos 3 dias' : 'nos próximos 7 dias');
+    agendaSubtitle.textContent = `Nenhum compromisso encontrado para ${periodLabel}.`;
+    eventsListContainer.innerHTML = `
+      <div style="padding: 24px; background-color: var(--bg-card); border-radius: 10px; border: 1px dashed var(--border-color); text-align: center; color: var(--text-muted);">
+        <p style="font-size: 14px;">Sem compromissos agendados para este período (${periodLabel}).</p>
+      </div>
+    `;
+    return;
+  }
+
+  const periodDesc = filterType === 'today' ? 'hoje' : (filterType === '3days' ? 'próximos 3 dias' : 'próximos 7 dias');
+  agendaSubtitle.textContent = `${filteredEvents.length} compromisso(s) encontrado(s) (${periodDesc}).`;
 
   // Agrupar por data (Hoje, Amanhã, Data)
   const groups = {};
-  const now = new Date();
   const todayStr = now.toDateString();
 
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
   const tomorrowStr = tomorrow.toDateString();
 
-  currentEventsList.forEach(ev => {
+  filteredEvents.forEach(ev => {
     const evDate = new Date(ev.start);
     const evDateStr = evDate.toDateString();
 
@@ -301,6 +332,12 @@ async function init() {
     cfgShowAllDay.checked = !!flt.showAllDay;
     cfgAllDayTime.value = flt.allDayTime || '09:00';
   }
+}
+
+if (agendaDateFilter) {
+  agendaDateFilter.addEventListener('change', () => {
+    renderAgendaEvents();
+  });
 }
 
 btnAgendaSync.addEventListener('click', async () => {

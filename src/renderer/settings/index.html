@@ -37,7 +37,12 @@
           <h3>Próximos Compromissos</h3>
           <p id="agenda-subtitle" style="font-size: 13px; color: var(--text-muted);">Carregando eventos do seu calendário...</p>
         </div>
-        <div>
+        <div class="inline-controls">
+          <select id="agenda-date-filter" style="font-size: 12px; padding: 6px 10px;">
+            <option value="today">Dia atual</option>
+            <option value="3days">Próximos 3 dias (+ atual)</option>
+            <option value="7days" selected>Próximos 7 dias (+ atual)</option>
+          </select>
           <button id="btn-agenda-sync" class="btn btn-sm btn-secondary">
             🔄 Sincronizar
           </button>
