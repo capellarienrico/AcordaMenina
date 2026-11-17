@@ -11,7 +11,9 @@ class Store {
         startup: true,
         defaultAlertMinutes: 1,
         defaultAlertSeconds: 0,
-        alertSound: 'chime',
+        alertSound: 'acorda-menina',
+        alertVolume: 90,
+        customSoundPath: '',
         snoozeDurations: [1, 3, 5]
       },
       calendars: {

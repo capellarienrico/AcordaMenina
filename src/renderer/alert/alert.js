@@ -50,7 +50,8 @@ function renderAlert(data) {
 
   // Tocar som configurado
   if (window.soundSynth) {
-    window.soundSynth.play(data.sound || 'chime');
+    const vol = typeof data.volume !== 'undefined' ? data.volume : 90;
+    window.soundSynth.play(data.sound || 'acorda-menina', vol, data.customSoundPath || '');
   }
 
   // Título e Detalhes

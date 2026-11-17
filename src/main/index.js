@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, Notification, dialog } = require('electron');
 const path = require('path');
 const store = require('./store');
 const calendarService = require('./calendar-service');
@@ -117,7 +117,9 @@ function showAlertForEvent(event) {
   const general = store.get('general');
   const alertData = {
     ...event,
-    sound: general.alertSound || 'chime',
+    sound: general.alertSound || 'acorda-menina',
+    volume: typeof general.alertVolume !== 'undefined' ? general.alertVolume : 90,
+    customSoundPath: general.customSoundPath || '',
     snoozeDurations: general.snoozeDurations || [1, 3, 5]
   };
 
@@ -342,6 +344,21 @@ ipcMain.handle('snooze-alert', (event, { event: ev, minutes }) => {
   if (alertWindow) {
     alertWindow.hide();
   }
+});
+
+ipcMain.handle('select-custom-sound', async () => {
+  const result = await dialog.showOpenDialog(settingsWindow, {
+    title: 'Escolha um arquivo de som para o alarme',
+    filters: [
+      { name: 'Arquivos de Áudio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'] }
+    ],
+    properties: ['openFile']
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    return result.filePaths[0];
+  }
+  return null;
 });
 
 ipcMain.handle('close-settings', () => {

@@ -15,10 +15,16 @@ const cfgStartup = document.getElementById('cfg-startup');
 const cfgAlertMin = document.getElementById('cfg-alert-min');
 const cfgAlertSec = document.getElementById('cfg-alert-sec');
 const cfgAlertSound = document.getElementById('cfg-alert-sound');
+const btnBrowseSound = document.getElementById('btn-browse-sound');
 const btnPreviewSound = document.getElementById('btn-preview-sound');
+const customSoundPathDisplay = document.getElementById('custom-sound-path-display');
+const cfgAlertVolume = document.getElementById('cfg-alert-volume');
+const volumeLabel = document.getElementById('volume-label');
 const cfgSnooze1 = document.getElementById('cfg-snooze-1');
 const cfgSnooze2 = document.getElementById('cfg-snooze-2');
 const cfgSnooze3 = document.getElementById('cfg-snooze-3');
+
+let currentCustomSoundPath = '';
 
 // Inputs Calendários
 const cfgRefreshInterval = document.getElementById('cfg-refresh-interval');
@@ -271,7 +277,12 @@ async function init() {
     cfgStartup.checked = gen.startup !== false;
     cfgAlertMin.value = typeof gen.defaultAlertMinutes !== 'undefined' ? gen.defaultAlertMinutes : 1;
     cfgAlertSec.value = typeof gen.defaultAlertSeconds !== 'undefined' ? gen.defaultAlertSeconds : 0;
-    cfgAlertSound.value = gen.alertSound || 'chime';
+    cfgAlertSound.value = gen.alertSound || 'acorda-menina';
+    cfgAlertVolume.value = typeof gen.alertVolume !== 'undefined' ? gen.alertVolume : 90;
+    volumeLabel.textContent = `${cfgAlertVolume.value}%`;
+    currentCustomSoundPath = gen.customSoundPath || '';
+    updateCustomSoundVisibility();
+
     const snoozes = gen.snoozeDurations || [1, 3, 5];
     cfgSnooze1.value = snoozes[0] || 1;
     cfgSnooze2.value = snoozes[1] || 3;
@@ -333,11 +344,42 @@ btnAddCalendar.addEventListener('click', () => {
   alert('Calendário adicionado! Clique em "Salvar Alterações" para sincronizar.');
 });
 
+// Controle de Som e Volume
+function updateCustomSoundVisibility() {
+  const isCustom = cfgAlertSound.value === 'custom';
+  btnBrowseSound.style.display = isCustom ? 'inline-flex' : 'none';
+  customSoundPathDisplay.style.display = (isCustom && currentCustomSoundPath) ? 'block' : 'none';
+  if (currentCustomSoundPath) {
+    customSoundPathDisplay.textContent = `Arquivo: ${currentCustomSoundPath}`;
+  }
+}
+
+cfgAlertSound.addEventListener('change', updateCustomSoundVisibility);
+
+cfgAlertVolume.addEventListener('input', () => {
+  volumeLabel.textContent = `${cfgAlertVolume.value}%`;
+});
+
+btnBrowseSound.addEventListener('click', async () => {
+  if (window.api) {
+    const selected = await window.api.selectCustomSound();
+    if (selected) {
+      currentCustomSoundPath = selected;
+      updateCustomSoundVisibility();
+      // Toca um pequeno preview
+      if (window.soundSynth) {
+        window.soundSynth.play('custom', parseInt(cfgAlertVolume.value, 10), currentCustomSoundPath);
+      }
+    }
+  }
+});
+
 // Testar Som
 btnPreviewSound.addEventListener('click', () => {
   const sound = cfgAlertSound.value;
+  const vol = parseInt(cfgAlertVolume.value, 10) || 90;
   if (window.soundSynth) {
-    window.soundSynth.play(sound);
+    window.soundSynth.play(sound, vol, currentCustomSoundPath);
   }
 });
 
@@ -382,6 +424,8 @@ btnSave.addEventListener('click', async () => {
       defaultAlertMinutes: parseInt(cfgAlertMin.value, 10) || 0,
       defaultAlertSeconds: parseInt(cfgAlertSec.value, 10) || 0,
       alertSound: cfgAlertSound.value,
+      alertVolume: parseInt(cfgAlertVolume.value, 10) || 90,
+      customSoundPath: currentCustomSoundPath || '',
       snoozeDurations: [
         parseInt(cfgSnooze1.value, 10) || 1,
         parseInt(cfgSnooze2.value, 10) || 3,

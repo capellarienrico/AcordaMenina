@@ -90,20 +90,43 @@
           <div class="setting-icon">🔊</div>
           <div class="setting-text">
             <h3>Som do Alerta</h3>
-            <p>Escolha o timbre do aviso sonoro para os alertas em tela cheia.</p>
+            <p>Escolha o aviso sonoro ou use seu próprio arquivo de áudio.</p>
           </div>
         </div>
-        <div class="inline-controls">
-          <select id="cfg-alert-sound">
-            <option value="chime">Chime Harmônico</option>
-            <option value="zen">Sino Zen</option>
-            <option value="digital">Pulso Digital</option>
-            <option value="gentle">Despertar Suave</option>
-            <option value="fanfare">Fanfarra de Atenção</option>
-          </select>
-          <button id="btn-preview-sound" class="btn btn-sm btn-secondary" title="Ouvir som">
-            ▶ Testar
-          </button>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+          <div class="inline-controls">
+            <select id="cfg-alert-sound">
+              <option value="acorda-menina" selected>📢 ACORDA, MENINA! (Original)</option>
+              <option value="chime">Chime Harmônico</option>
+              <option value="zen">Sino Zen</option>
+              <option value="digital">Pulso Digital</option>
+              <option value="gentle">Despertar Suave</option>
+              <option value="fanfare">Fanfarra de Atenção</option>
+              <option value="custom">📁 Arquivo Personalizado...</option>
+            </select>
+            <button id="btn-browse-sound" class="btn btn-sm btn-secondary" style="display: none;" title="Procurar arquivo de áudio">
+              📁 Procurar
+            </button>
+            <button id="btn-preview-sound" class="btn btn-sm btn-secondary" title="Ouvir som">
+              ▶ Testar
+            </button>
+          </div>
+          <div id="custom-sound-path-display" style="font-size: 11px; color: var(--accent); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;"></div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">🎚️</div>
+          <div class="setting-text">
+            <h3>Volume do Alerta</h3>
+            <p>Ajuste o volume da reprodução do som.</p>
+          </div>
+        </div>
+        <div class="inline-controls" style="min-width: 220px;">
+          <span style="font-size: 16px;">🔈</span>
+          <input type="range" id="cfg-alert-volume" min="0" max="100" value="90" style="flex: 1; accent-color: var(--accent); cursor: pointer;">
+          <span id="volume-label" style="font-size: 13px; font-weight: 600; min-width: 42px; text-align: right;">90%</span>
         </div>
       </div>
 
