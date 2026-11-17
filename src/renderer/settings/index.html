@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>AcordaMenina - Configurações</title>
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+
+  <header>
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="general">
+        ⚙️ Geral
+      </button>
+      <button class="tab-btn" data-tab="calendars">
+        📅 Calendários
+      </button>
+      <button class="tab-btn" data-tab="filters">
+        🔍 Filtros de Eventos
+      </button>
+    </div>
+    <div>
+      <button id="btn-test-alert" class="btn btn-sm btn-secondary" title="Simula a tela de alerta agora">
+        🔔 Testar Alerta
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ABA GERAL -->
+    <section id="tab-general" class="tab-pane active">
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">👤</div>
+          <div class="setting-text">
+            <h3>Iniciar com o Windows</h3>
+            <p>Abre o AcordaMenina automaticamente ao iniciar o computador.</p>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cfg-startup" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">🔔</div>
+          <div class="setting-text">
+            <h3>Tempo Padrão de Antecedência</h3>
+            <p>Quanto tempo antes do início da reunião o alerta em tela cheia deve surgir?</p>
+          </div>
+        </div>
+        <div class="inline-controls">
+          <div class="num-input-group">
+            <input type="number" id="cfg-alert-min" min="0" max="120" value="1">
+            <span>minutos</span>
+          </div>
+          <div class="num-input-group">
+            <input type="number" id="cfg-alert-sec" min="0" max="59" value="0">
+            <span>segundos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">🔊</div>
+          <div class="setting-text">
+            <h3>Som do Alerta</h3>
+            <p>Escolha o timbre do aviso sonoro para os alertas em tela cheia.</p>
+          </div>
+        </div>
+        <div class="inline-controls">
+          <select id="cfg-alert-sound">
+            <option value="chime">Chime Harmônico</option>
+            <option value="zen">Sino Zen</option>
+            <option value="digital">Pulso Digital</option>
+            <option value="gentle">Despertar Suave</option>
+            <option value="fanfare">Fanfarra de Atenção</option>
+          </select>
+          <button id="btn-preview-sound" class="btn btn-sm btn-secondary" title="Ouvir som">
+            ▶ Testar
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">💤</div>
+          <div class="setting-text">
+            <h3>Botões de Soneca (Snooze)</h3>
+            <p>Configure a duração dos botões de adiamento que aparecem no alerta.</p>
+          </div>
+        </div>
+        <div class="inline-controls">
+          <div class="num-input-group">
+            <input type="number" id="cfg-snooze-1" min="1" max="60" value="1">
+            <span>m</span>
+          </div>
+          <div class="num-input-group">
+            <input type="number" id="cfg-snooze-2" min="1" max="60" value="3">
+            <span>m</span>
+          </div>
+          <div class="num-input-group">
+            <input type="number" id="cfg-snooze-3" min="1" max="60" value="5">
+            <span>m</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA CALENDÁRIOS -->
+    <section id="tab-calendars" class="tab-pane">
+      <div class="calendars-header">
+        <div>
+          <h3>Contas & Calendários Ativos</h3>
+          <p style="font-size: 13px; color: var(--text-muted);">Mantenha quantos calendários desejar, sem nenhuma limitação de conta.</p>
+        </div>
+        <div class="inline-controls">
+          <span style="font-size: 13px; color: var(--text-muted);">Atualizar a cada:</span>
+          <select id="cfg-refresh-interval">
+            <option value="1">1 minuto</option>
+            <option value="2">2 minutos</option>
+            <option value="5" selected>5 minutos</option>
+            <option value="10">10 minutos</option>
+            <option value="15">15 minutos</option>
+          </select>
+          <button id="btn-sync-now" class="btn btn-sm btn-secondary">
+            🔄 Sincronizar Agora
+          </button>
+        </div>
+      </div>
+
+      <div id="calendar-accounts-list">
+        <!-- Renderizado dinamicamente -->
+      </div>
+
+      <div class="add-calendar-box">
+        <h4>➕ Adicionar Novo Calendário (Google Agenda / Outlook / iCal)</h4>
+        <p>
+          Para adicionar sua agenda do Google: Abra o <b>Google Agenda no navegador</b> &gt; 
+          Clique nos 3 pontos ao lado da sua agenda &gt; <b>Configurações</b> &gt; 
+          Role até <b>"Integrar agenda"</b> &gt; Copie o <b>"Endereço secreto no formato iCal"</b>.
+        </p>
+        <div class="input-row">
+          <label for="new-cal-name">Nome do Calendário / Conta</label>
+          <input type="text" id="new-cal-name" placeholder="Ex: capellarienrico@gmail.com ou Trabalho">
+        </div>
+        <div class="input-row">
+          <label for="new-cal-url">URL Privada iCal (.ics)</label>
+          <input type="text" id="new-cal-url" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics">
+        </div>
+        <div>
+          <button id="btn-add-calendar" class="btn btn-sm">
+            Adicionar Calendário
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABA FILTROS -->
+    <section id="tab-filters" class="tab-pane">
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-text">
+            <h3>Exibir eventos dos próximos</h3>
+            <p>Janela de busca de eventos futuros.</p>
+          </div>
+        </div>
+        <select id="cfg-days-ahead">
+          <option value="1">Próximas 24 horas</option>
+          <option value="3">Próximos 3 dias</option>
+          <option value="7" selected>Próximos 7 dias</option>
+          <option value="14">Próximos 14 dias</option>
+        </select>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-text">
+            <h3>Apenas eventos aceitos</h3>
+            <p>Ignora reuniões pendentes ou marcadas como "Talvez".</p>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cfg-only-accepted">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-icon">📹</div>
+          <div class="setting-text">
+            <h3>Apenas eventos com videoconferência</h3>
+            <p>Dispara o alerta em tela cheia apenas quando houver link do Google Meet, Zoom, Teams, etc.</p>
+          </div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="cfg-only-video">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
+          <div class="setting-text">
+            <h3>Exibir eventos de dia inteiro</h3>
+            <p>Alertar sobre aniversários e compromissos que duram o dia todo.</p>
+          </div>
+        </div>
+        <div class="inline-controls">
+          <label class="switch">
+            <input type="checkbox" id="cfg-show-allday">
+            <span class="slider"></span>
+          </label>
+          <input type="text" id="cfg-allday-time" value="09:00" style="width: 70px; text-align: center;" title="Horário do alerta para eventos de dia todo">
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="status-badge">
+      <span class="status-indicator"></span>
+      <span id="sync-status-text">AcordaMenina ativo em segundo plano</span>
+    </div>
+    <div>
+      <button id="btn-save" class="btn">
+        💾 Salvar Alterações
+      </button>
+    </div>
+  </footer>
+
+  <script src="../audio-synth.js"></script>
+  <script src="settings.js"></script>
+</body>
+</html>

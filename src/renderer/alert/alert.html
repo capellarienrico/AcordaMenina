@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>AcordaMenina - Alerta</title>
+  <link rel="stylesheet" href="alert.css">
+</head>
+<body>
+
+  <div class="alert-header">
+    <span>⏰ AcordaMenina</span>
+    <div id="countdown" class="countdown-box">Começa em breve</div>
+  </div>
+
+  <div class="event-container">
+    <div class="calendar-badge">
+      <span id="platform-icon">📅</span>
+      <span id="calendar-name">Google Agenda</span>
+    </div>
+
+    <h1 id="event-title" class="event-title">Nome da Reunião</h1>
+    <div id="event-time" class="event-time">Horário: 00:00 - 00:00</div>
+    <div id="event-description" class="event-description"></div>
+
+    <button id="btn-action" class="btn-join">
+      <span id="btn-icon">🚀</span>
+      <span id="btn-text">Entrar na Chamada</span>
+    </button>
+  </div>
+
+  <div class="alert-footer">
+    <span class="snooze-label">Adiar por:</span>
+    <div id="snooze-buttons-container" style="display: flex; gap: 8px;">
+      <!-- Preenchido via JS com as durações configuradas -->
+    </div>
+    <div style="width: 1px; height: 18px; background-color: rgba(255,255,255,0.1); margin: 0 4px;"></div>
+    <button id="btn-dismiss" class="btn-dismiss">
+      Dispensar
+    </button>
+  </div>
+
+  <div class="esc-hint">Pressione ESC para fechar</div>
+
+  <script src="../audio-synth.js"></script>
+  <script src="alert.js"></script>
+</body>
+</html>
