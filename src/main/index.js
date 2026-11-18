@@ -29,11 +29,16 @@ if (!gotTheLock) {
 
 function getAppIcon() {
   const icoPath = path.join(__dirname, '../assets/icon.ico');
+  const pngPath = path.join(__dirname, '../assets/icon.png');
   try {
-    return nativeImage.createFromPath(icoPath);
+    const ico = nativeImage.createFromPath(icoPath);
+    if (!ico.isEmpty()) return ico;
+    const png = nativeImage.createFromPath(pngPath);
+    if (!png.isEmpty()) return png;
   } catch (e) {
-    return null;
+    // fallback
   }
+  return null;
 }
 
 function createAlertWindow() {

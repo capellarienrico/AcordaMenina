@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>AcordaMenina - Alerta</title>
+  <link rel="icon" type="image/png" href="../../assets/icon.png">
   <link rel="stylesheet" href="alert.css">
 </head>
 <body>
@@ -10,7 +11,10 @@
   <button id="btn-close-overlay" class="btn-top-close" title="Fechar Alerta (ESC)">✕ Fechar</button>
 
   <div class="alert-header">
-    <span>⏰ AcordaMenina</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="../../assets/icon.png" alt="Louro José" style="width: 28px; height: 28px; object-fit: contain; vertical-align: middle;">
+      <span>AcordaMenina</span>
+    </div>
     <div id="countdown" class="countdown-box">Começa em breve</div>
   </div>
 

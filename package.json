@@ -12,6 +12,7 @@
     "appId": "com.capellarienrico.acordamenina",
     "productName": "AcordaMenina",
     "win": {
+      "icon": "src/assets/icon.ico",
       "target": [
         "nsis",
         "portable"
