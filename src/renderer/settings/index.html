@@ -137,6 +137,22 @@
 
       <div class="setting-card">
         <div class="setting-info">
+          <div class="setting-icon">🔁</div>
+          <div class="setting-text">
+            <h3>Repetição do Som</h3>
+            <p>Escolha se o som toca uma vez só ou continua tocando até você fechar o alerta.</p>
+          </div>
+        </div>
+        <select id="cfg-sound-repeat">
+          <option value="until-closed" selected>Tocar em loop até fechar a tela</option>
+          <option value="every-15s">Tocar a cada 15 segundos até fechar</option>
+          <option value="every-30s">Tocar a cada 30 segundos até fechar</option>
+          <option value="once">Tocar apenas 1 vez</option>
+        </select>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-info">
           <div class="setting-icon">💤</div>
           <div class="setting-text">
             <h3>Botões de Soneca (Snooze)</h3>
@@ -188,17 +204,22 @@
 
       <div class="add-calendar-box">
         <h4>➕ Adicionar Novo Calendário (Google Agenda / Outlook / iCal)</h4>
-        <p>
-          Para adicionar sua agenda do Google: Abra o <b>Google Agenda no navegador</b> &gt; 
-          Clique nos 3 pontos ao lado da sua agenda &gt; <b>Configurações</b> &gt; 
-          Role até <b>"Integrar agenda"</b> &gt; Copie o <b>"Endereço secreto no formato iCal"</b>.
-        </p>
+        <div style="background-color: rgba(56, 189, 248, 0.08); border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 4px; margin: 4px 0 10px 0;">
+          <p style="font-size: 13px; color: #e4e4e7; line-height: 1.5;">
+            <b>Como pegar o link correto no Google Agenda:</b><br>
+            1. Abra o <a href="#" id="link-open-gcal" style="color: var(--accent); text-decoration: underline;">Google Agenda no navegador</a>.<br>
+            2. Na barra lateral esquerda ("Minhas agendas"), passe o mouse sobre a sua agenda, clique nos <b>3 pontinhos</b> &gt; <b>Configurações e compart.</b><br>
+            3. Role a página até o final na seção <b>"Integrar agenda"</b>.<br>
+            4. Copie o <b>"Endereço secreto no formato iCal"</b> (o link deve terminar em <code>/basic.ics</code>).<br>
+            <i>⚠️ Não copie o link de "Compartilhamento" ou do navegador, pois eles são páginas web e não feeds de eventos.</i>
+          </p>
+        </div>
         <div class="input-row">
           <label for="new-cal-name">Nome do Calendário / Conta</label>
           <input type="text" id="new-cal-name" placeholder="Ex: capellarienrico@gmail.com ou Trabalho">
         </div>
         <div class="input-row">
-          <label for="new-cal-url">URL Privada iCal (.ics)</label>
+          <label for="new-cal-url">URL Secreta iCal (terminando em .ics)</label>
           <input type="text" id="new-cal-url" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics">
         </div>
         <div>

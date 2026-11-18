@@ -119,6 +119,7 @@ function showAlertForEvent(event) {
     ...event,
     sound: general.alertSound || 'acorda-menina',
     volume: typeof general.alertVolume !== 'undefined' ? general.alertVolume : 90,
+    soundRepeatMode: general.soundRepeatMode || 'until-closed',
     customSoundPath: general.customSoundPath || '',
     snoozeDurations: general.snoozeDurations || [1, 3, 5]
   };

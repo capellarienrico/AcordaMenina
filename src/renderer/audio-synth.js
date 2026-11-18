@@ -2,6 +2,8 @@ class SoundEngine {
   constructor() {
     this.ctx = null;
     this.currentAudio = null;
+    this.loopTimer = null;
+    this.isLooping = false;
   }
 
   getContext() {
@@ -16,6 +18,12 @@ class SoundEngine {
   }
 
   stop() {
+    this.isLooping = false;
+    if (this.loopTimer) {
+      clearTimeout(this.loopTimer);
+      clearInterval(this.loopTimer);
+      this.loopTimer = null;
+    }
     if (this.currentAudio) {
       try {
         this.currentAudio.pause();
@@ -25,70 +33,127 @@ class SoundEngine {
     }
   }
 
-  play(soundName = 'acorda-menina', volumePercent = 90, customSoundPath = '') {
+  startLoop(soundName = 'acorda-menina', volumePercent = 90, customSoundPath = '', repeatMode = 'until-closed') {
     this.stop();
+    this.isLooping = true;
+
+    const playOnce = () => {
+      if (!this.isLooping) return;
+      this.play(soundName, volumePercent, customSoundPath, (endedDurationMs) => {
+        if (!this.isLooping) return;
+
+        if (repeatMode === 'once') {
+          this.isLooping = false;
+          return;
+        }
+
+        let delayMs = 1200; // Padrão: 1.2s de pausa entre as repetições no modo until-closed
+        if (repeatMode === 'every-15s') {
+          delayMs = Math.max(1000, 15000 - endedDurationMs);
+        } else if (repeatMode === 'every-30s') {
+          delayMs = Math.max(1000, 30000 - endedDurationMs);
+        }
+
+        this.loopTimer = setTimeout(() => {
+          if (this.isLooping) {
+            playOnce();
+          }
+        }, delayMs);
+      });
+    };
+
+    playOnce();
+  }
+
+  play(soundName = 'acorda-menina', volumePercent = 90, customSoundPath = '', onEnded = null) {
     const volume = Math.max(0, Math.min(100, volumePercent)) / 100;
+    const startTime = Date.now();
+
+    const handleEnd = () => {
+      if (onEnded) {
+        const duration = Date.now() - startTime;
+        onEnded(duration);
+      }
+    };
 
     if (soundName === 'acorda-menina') {
-      // Toca o áudio oficial "ACORDA, MENINA!!!!!!"
       try {
         const audio = new Audio('../assets/acorda-menina.mp3');
         audio.volume = volume;
+        audio.onended = handleEnd;
         audio.play().catch(e => {
-          console.warn('Erro ao reproduzir acorda-menina.mp3 relativo, tentando caminho alternativo:', e);
           const fallback = new Audio('../../assets/acorda-menina.mp3');
           fallback.volume = volume;
-          fallback.play();
+          fallback.onended = handleEnd;
+          fallback.play().catch(err => handleEnd());
         });
         this.currentAudio = audio;
         return;
       } catch (err) {
         console.error('Falha ao tocar MP3 default:', err);
+        handleEnd();
+        return;
       }
     }
 
     if (soundName === 'custom' && customSoundPath) {
       try {
-        // Formato file:// para arquivos locais no Windows
         const safePath = customSoundPath.replace(/\\/g, '/');
         const fileUrl = safePath.startsWith('file://') ? safePath : `file:///${safePath}`;
         const audio = new Audio(fileUrl);
         audio.volume = volume;
-        audio.play().catch(e => console.error('Erro ao tocar som customizado:', e));
+        audio.onended = handleEnd;
+        audio.play().catch(e => {
+          console.error('Erro ao tocar som customizado:', e);
+          handleEnd();
+        });
         this.currentAudio = audio;
         return;
       } catch (err) {
         console.error('Falha ao tocar som custom:', err);
+        handleEnd();
+        return;
       }
     }
 
-    // Sons Sintetizados via Web Audio API com controle de volume
+    // Sons Sintetizados via Web Audio API
     const ctx = this.getContext();
     const now = ctx.currentTime;
+    let synthDuration = 1.5;
 
     switch (soundName) {
       case 'chime':
         this.playChime(ctx, now, volume);
+        synthDuration = 1.5;
         break;
       case 'zen':
         this.playZen(ctx, now, volume);
+        synthDuration = 2.6;
         break;
       case 'digital':
         this.playDigital(ctx, now, volume);
+        synthDuration = 0.6;
         break;
       case 'gentle':
         this.playGentle(ctx, now, volume);
+        synthDuration = 1.8;
         break;
       case 'fanfare':
         this.playFanfare(ctx, now, volume);
+        synthDuration = 2.0;
         break;
       default:
         this.playChime(ctx, now, volume);
+        synthDuration = 1.5;
     }
+
+    setTimeout(() => {
+      handleEnd();
+    }, synthDuration * 1000);
   }
 
   playChime(ctx, now, vol = 0.8) {
-    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+    const notes = [523.25, 659.25, 783.99, 1046.5];
     notes.forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();

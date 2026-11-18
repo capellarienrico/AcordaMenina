@@ -41,18 +41,43 @@ class CalendarService {
   }
 
   /**
+   * Valida e ajusta a URL do calendário
+   */
+  sanitizeCalendarUrl(rawUrl) {
+    let url = (rawUrl || '').trim();
+    if (!url) return '';
+
+    // Substitui webcal:// por https://
+    if (url.startsWith('webcal://')) {
+      url = 'https://' + url.substring(9);
+    }
+
+    return url;
+  }
+
+  /**
    * Baixa e processa um feed iCal a partir de uma URL.
    */
   async fetchCalendarFromUrl(calendarAccount) {
     try {
-      const url = calendarAccount.url.trim();
+      const url = this.sanitizeCalendarUrl(calendarAccount.url);
       if (!url) return [];
 
-      const events = await ical.async.fromURL(url);
+      // Dica de debug no console
+      if (!url.includes('.ics') && !url.includes('/ical/')) {
+        console.warn(`[Aviso] A URL da conta "${calendarAccount.name}" não parece ser um feed .ics válido: ${url}`);
+      }
+
+      const events = await ical.async.fromURL(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AcordaMenina/1.0'
+        }
+      });
+
       const parsedEvents = [];
       const now = new Date();
       const maxFutureDate = new Date();
-      maxFutureDate.setDate(now.getDate() + 7); // 7 dias à frente padrão
+      maxFutureDate.setDate(now.getDate() + 14); // Busca até 14 dias futuros
 
       for (const key in events) {
         if (!Object.prototype.hasOwnProperty.call(events, key)) continue;
@@ -60,6 +85,41 @@ class CalendarService {
 
         if (ev.type !== 'VEVENT') continue;
 
+        const { url: videoLink, platform: videoPlatform } = this.extractVideoLink(ev);
+        const isAllDay = !ev.start.getHours && !ev.start.getMinutes;
+
+        // Se for evento recorrente (RRULE), calcula as ocorrências no período
+        if (ev.rrule) {
+          const duration = (ev.end && ev.start) ? (new Date(ev.end).getTime() - new Date(ev.start).getTime()) : 3600000;
+          const searchStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          const occurrences = ev.rrule.between(searchStart, maxFutureDate, true);
+
+          occurrences.forEach((occDate, idx) => {
+            const start = new Date(occDate);
+            const end = new Date(start.getTime() + duration);
+
+            if (end >= now && start <= maxFutureDate) {
+              parsedEvents.push({
+                id: `${ev.uid || calendarAccount.id}-${start.getTime()}-${idx}`,
+                title: ev.summary || 'Sem título',
+                description: ev.description || '',
+                location: ev.location || '',
+                start: start.toISOString(),
+                end: end.toISOString(),
+                isAllDay,
+                calendarId: calendarAccount.id,
+                calendarName: calendarAccount.name || 'Google Agenda',
+                color: calendarAccount.color || '#4285F4',
+                videoLink,
+                videoPlatform,
+                status: ev.status || 'CONFIRMED'
+              });
+            }
+          });
+          continue;
+        }
+
+        // Evento único normal
         const start = ev.start ? new Date(ev.start) : null;
         const end = ev.end ? new Date(ev.end) : null;
 
@@ -68,9 +128,6 @@ class CalendarService {
         // Apenas eventos futuros ou em andamento
         if (end && end < now) continue;
         if (start > maxFutureDate) continue;
-
-        const isAllDay = !ev.start.getHours && !ev.start.getMinutes;
-        const { url: videoLink, platform: videoPlatform } = this.extractVideoLink(ev);
 
         parsedEvents.push({
           id: ev.uid || `${calendarAccount.id}-${start.getTime()}`,

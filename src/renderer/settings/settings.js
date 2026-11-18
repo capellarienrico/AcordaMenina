@@ -21,6 +21,7 @@ const btnPreviewSound = document.getElementById('btn-preview-sound');
 const customSoundPathDisplay = document.getElementById('custom-sound-path-display');
 const cfgAlertVolume = document.getElementById('cfg-alert-volume');
 const volumeLabel = document.getElementById('volume-label');
+const cfgSoundRepeat = document.getElementById('cfg-sound-repeat');
 const cfgSnooze1 = document.getElementById('cfg-snooze-1');
 const cfgSnooze2 = document.getElementById('cfg-snooze-2');
 const cfgSnooze3 = document.getElementById('cfg-snooze-3');
@@ -311,6 +312,7 @@ async function init() {
     cfgAlertSound.value = gen.alertSound || 'acorda-menina';
     cfgAlertVolume.value = typeof gen.alertVolume !== 'undefined' ? gen.alertVolume : 90;
     volumeLabel.textContent = `${cfgAlertVolume.value}%`;
+    cfgSoundRepeat.value = gen.soundRepeatMode || 'until-closed';
     currentCustomSoundPath = gen.customSoundPath || '';
     updateCustomSoundVisibility();
 
@@ -353,14 +355,35 @@ btnAgendaSync.addEventListener('click', async () => {
   }
 });
 
+// Link rápido para abrir o Google Agenda
+const linkOpenGcal = document.getElementById('link-open-gcal');
+if (linkOpenGcal) {
+  linkOpenGcal.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (window.api) {
+      window.api.openLink('https://calendar.google.com/calendar/u/0/r/settings');
+    }
+  });
+}
+
 // Adicionar Novo Calendário
 btnAddCalendar.addEventListener('click', () => {
   const name = newCalName.value.trim();
-  const url = newCalUrl.value.trim();
+  let url = newCalUrl.value.trim();
 
   if (!url) {
-    alert('Por favor, informe a URL privada iCal do calendário.');
+    alert('Por favor, informe a URL do calendário.');
     return;
+  }
+
+  // Validação preventiva de URL do Google Calendar
+  if (url.includes('calendar.google.com/calendar/u/') || url.includes('/cid=') || url.includes('/embed?')) {
+    const confirmUse = confirm(
+      'Atenção: Esse link parece ser da página web do Google Agenda e não um feed de eventos.\n\n' +
+      'Para sincronizar os compromissos, copie o "Endereço secreto no formato iCal" (que termina com .ics) nas configurações da sua agenda.\n\n' +
+      'Deseja adicionar esse link mesmo assim?'
+    );
+    if (!confirmUse) return;
   }
 
   if (!currentConfig.calendars.accounts) {
@@ -378,7 +401,7 @@ btnAddCalendar.addEventListener('click', () => {
   newCalName.value = '';
   newCalUrl.value = '';
   renderCalendars();
-  alert('Calendário adicionado! Clique em "Salvar Alterações" para sincronizar.');
+  alert('Calendário adicionado! Clique em "Salvar Alterações" para sincronizar seus compromissos.');
 });
 
 // Controle de Som e Volume
@@ -462,6 +485,7 @@ btnSave.addEventListener('click', async () => {
       defaultAlertSeconds: parseInt(cfgAlertSec.value, 10) || 0,
       alertSound: cfgAlertSound.value,
       alertVolume: parseInt(cfgAlertVolume.value, 10) || 90,
+      soundRepeatMode: cfgSoundRepeat.value || 'until-closed',
       customSoundPath: currentCustomSoundPath || '',
       snoozeDurations: [
         parseInt(cfgSnooze1.value, 10) || 1,

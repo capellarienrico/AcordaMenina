@@ -48,10 +48,11 @@ function updateCountdown() {
 function renderAlert(data) {
   currentEvent = data;
 
-  // Tocar som configurado
+  // Iniciar reprodução de som com repetição configurada
   if (window.soundSynth) {
     const vol = typeof data.volume !== 'undefined' ? data.volume : 90;
-    window.soundSynth.play(data.sound || 'acorda-menina', vol, data.customSoundPath || '');
+    const repeatMode = data.soundRepeatMode || 'until-closed';
+    window.soundSynth.startLoop(data.sound || 'acorda-menina', vol, data.customSoundPath || '', repeatMode);
   }
 
   // Título e Detalhes
@@ -99,6 +100,9 @@ function renderAlert(data) {
     btn.className = 'btn-pill';
     btn.textContent = `+${min} min`;
     btn.addEventListener('click', () => {
+      if (window.soundSynth) {
+        window.soundSynth.stop();
+      }
       if (window.api && currentEvent) {
         window.api.snoozeAlert(currentEvent, min);
       }
@@ -114,6 +118,9 @@ function renderAlert(data) {
 
 function closeAlert() {
   if (countdownInterval) clearInterval(countdownInterval);
+  if (window.soundSynth) {
+    window.soundSynth.stop();
+  }
   if (window.api) {
     const id = currentEvent ? currentEvent.id : 'dismiss';
     window.api.dismissAlert(id);
@@ -122,6 +129,9 @@ function closeAlert() {
 
 // Ações
 btnAction.addEventListener('click', () => {
+  if (window.soundSynth) {
+    window.soundSynth.stop();
+  }
   if (currentEvent && currentEvent.videoLink) {
     window.api.openLink(currentEvent.videoLink);
   } else {

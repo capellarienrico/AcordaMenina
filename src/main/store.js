@@ -13,6 +13,7 @@ class Store {
         defaultAlertSeconds: 0,
         alertSound: 'acorda-menina',
         alertVolume: 90,
+        soundRepeatMode: 'until-closed',
         customSoundPath: '',
         snoozeDurations: [1, 3, 5]
       },
