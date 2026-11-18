@@ -305,12 +305,23 @@ async function init() {
   if (window.api) {
     currentConfig = await window.api.getConfig();
 
-    // Carrega eventos da agenda
-    loadAndRenderEvents();
+    // Listener para quando o processo principal terminar uma sincronização
+    window.api.onSyncFinished((events) => {
+      currentEventsList = events || [];
+      renderAgendaEvents();
+    });
 
     window.api.onShowAgendaTab(() => {
       selectTab('agenda');
     });
+
+    // Renderiza inicialmente e dispara sincronização imediata ao abrir
+    loadAndRenderEvents();
+    agendaSubtitle.textContent = 'Sincronizando agendas automaticamente...';
+    window.api.syncCalendars().then(res => {
+      currentEventsList = (res && res.events) || [];
+      renderAgendaEvents();
+    }).catch(() => {});
 
     // Preenche Geral
     const gen = currentConfig.general || {};

@@ -16,5 +16,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   onShowAgendaTab: (callback) => {
     ipcRenderer.on('show-agenda-tab', () => callback());
+  },
+  onSyncFinished: (callback) => {
+    ipcRenderer.on('sync-finished', (event, events) => callback(events));
   }
 });

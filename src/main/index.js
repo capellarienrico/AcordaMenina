@@ -21,6 +21,8 @@ if (!gotTheLock) {
       if (settingsWindow.isMinimized()) settingsWindow.restore();
       settingsWindow.show();
       settingsWindow.focus();
+      settingsWindow.webContents.send('show-agenda-tab');
+      performSync();
     }
   });
 }
@@ -144,6 +146,11 @@ async function performSync() {
       scheduler.scheduleEvents(currentEvents, general, filters);
     }
     updateTrayMenu();
+
+    // Notifica a janela de configurações se estiver aberta
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send('sync-finished', currentEvents);
+    }
   } catch (err) {
     console.error('Erro na sincronização:', err);
   }
@@ -189,8 +196,9 @@ function createTray() {
         settingsWindow.show();
         settingsWindow.focus();
       }
-      // Avisa o renderer para focar na aba de agenda
+      // Avisa o renderer para focar na aba de agenda e sincroniza
       settingsWindow.webContents.send('show-agenda-tab');
+      performSync();
     });
 
     tray.on('double-click', () => {
