@@ -1,9 +1,25 @@
 class Scheduler {
   constructor(onTriggerAlert) {
     this.onTriggerAlert = onTriggerAlert;
-    this.timers = new Map(); // eventId -> timeoutId
-    this.dismissedEvents = new Set();
+    this.timers = new Map(); // timerKey -> timeoutId
+    this.firedAlerts = new Set(); // timerKey de alertas já disparados
     this.activeEvents = [];
+  }
+
+  /**
+   * Obtém a lista de tempos de antecedência configurados em milissegundos.
+   */
+  getAlertLeadsMs(generalConfig) {
+    if (Array.isArray(generalConfig.alertTimes) && generalConfig.alertTimes.length > 0) {
+      return generalConfig.alertTimes
+        .filter(t => t.enabled !== false)
+        .map(t => ((parseInt(t.minutes, 10) || 0) * 60 + (parseInt(t.seconds, 10) || 0)) * 1000);
+    }
+
+    // Fallback legado
+    const mins = typeof generalConfig.defaultAlertMinutes !== 'undefined' ? generalConfig.defaultAlertMinutes : 15;
+    const secs = typeof generalConfig.defaultAlertSeconds !== 'undefined' ? generalConfig.defaultAlertSeconds : 0;
+    return [(mins * 60 + secs) * 1000];
   }
 
   /**
@@ -14,39 +30,42 @@ class Scheduler {
     this.clearAllTimers();
 
     const now = Date.now();
-    const alertLeadMs = ((generalConfig.defaultAlertMinutes || 1) * 60 +
-                         (generalConfig.defaultAlertSeconds || 0)) * 1000;
+    const leadsMs = this.getAlertLeadsMs(generalConfig);
 
     for (const event of events) {
-      if (this.dismissedEvents.has(event.id)) continue;
-
       // Filtros
       if (filterConfig.onlyWithVideo && !event.videoLink) continue;
       if (filterConfig.onlyAccepted && event.status === 'TENTATIVE') continue;
       if (event.isAllDay && !filterConfig.showAllDay) continue;
 
       const eventStartMs = new Date(event.start).getTime();
-      const triggerTimeMs = eventStartMs - alertLeadMs;
-      const delay = triggerTimeMs - now;
 
-      // Se o evento está nos próximos instantes ou começou recentemente (até 5 min atrás) e ainda não foi alertado
-      if (delay > 0) {
-        const timerId = setTimeout(() => {
-          this.trigger(event);
-        }, delay);
-        this.timers.set(event.id, timerId);
-      } else if (delay <= 0 && (now - eventStartMs) < 5 * 60 * 1000) {
-        // Se já está na hora ou atrasado até 5 min
-        this.trigger(event);
+      for (const leadMs of leadsMs) {
+        const timerKey = `${event.id}-lead-${leadMs}`;
+        if (this.firedAlerts.has(timerKey)) continue;
+
+        const triggerTimeMs = eventStartMs - leadMs;
+        const delay = triggerTimeMs - now;
+
+        // Se o disparo for no futuro
+        if (delay > 0) {
+          const timerId = setTimeout(() => {
+            this.trigger(event, timerKey);
+          }, delay);
+          this.timers.set(timerKey, timerId);
+        } else if (delay <= 0 && delay > -30000 && (now - eventStartMs) < 5 * 60 * 1000) {
+          // Se estiver na janela de disparo recente (até 30s de tolerância)
+          this.trigger(event, timerKey);
+        }
       }
     }
   }
 
-  trigger(event) {
-    this.dismissedEvents.add(event.id);
-    if (this.timers.has(event.id)) {
-      clearTimeout(this.timers.get(event.id));
-      this.timers.delete(event.id);
+  trigger(event, timerKey) {
+    this.firedAlerts.add(timerKey);
+    if (this.timers.has(timerKey)) {
+      clearTimeout(this.timers.get(timerKey));
+      this.timers.delete(timerKey);
     }
     if (this.onTriggerAlert) {
       this.onTriggerAlert(event);
@@ -55,26 +74,18 @@ class Scheduler {
 
   snooze(event, minutes) {
     const snoozeMs = minutes * 60 * 1000;
-    this.dismissedEvents.delete(event.id);
-
-    if (this.timers.has(event.id)) {
-      clearTimeout(this.timers.get(event.id));
-    }
+    const snoozeKey = `${event.id}-snooze-${Date.now()}`;
 
     const timerId = setTimeout(() => {
-      this.trigger(event);
+      this.trigger(event, snoozeKey);
     }, snoozeMs);
 
-    this.timers.set(event.id, timerId);
+    this.timers.set(snoozeKey, timerId);
     console.log(`Evento "${event.title}" adiado por ${minutes} minutos.`);
   }
 
   dismiss(eventId) {
-    this.dismissedEvents.add(eventId);
-    if (this.timers.has(eventId)) {
-      clearTimeout(this.timers.get(eventId));
-      this.timers.delete(eventId);
-    }
+    // Apenas marca que dispensou o alerta visual atual
   }
 
   clearAllTimers() {

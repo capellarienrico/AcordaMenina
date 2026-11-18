@@ -13,8 +13,16 @@ const agendaDateFilter = document.getElementById('agenda-date-filter');
 
 // Inputs Geral
 const cfgStartup = document.getElementById('cfg-startup');
-const cfgAlertMin = document.getElementById('cfg-alert-min');
-const cfgAlertSec = document.getElementById('cfg-alert-sec');
+const cfgAlert1Enable = document.getElementById('cfg-alert-1-enable');
+const cfgAlert1Min = document.getElementById('cfg-alert-1-min');
+const cfgAlert1Sec = document.getElementById('cfg-alert-1-sec');
+const cfgAlert2Enable = document.getElementById('cfg-alert-2-enable');
+const cfgAlert2Min = document.getElementById('cfg-alert-2-min');
+const cfgAlert2Sec = document.getElementById('cfg-alert-2-sec');
+const cfgAlert3Enable = document.getElementById('cfg-alert-3-enable');
+const cfgAlert3Min = document.getElementById('cfg-alert-3-min');
+const cfgAlert3Sec = document.getElementById('cfg-alert-3-sec');
+
 const cfgAlertSound = document.getElementById('cfg-alert-sound');
 const btnBrowseSound = document.getElementById('btn-browse-sound');
 const btnPreviewSound = document.getElementById('btn-preview-sound');
@@ -307,8 +315,30 @@ async function init() {
     // Preenche Geral
     const gen = currentConfig.general || {};
     cfgStartup.checked = gen.startup !== false;
-    cfgAlertMin.value = typeof gen.defaultAlertMinutes !== 'undefined' ? gen.defaultAlertMinutes : 1;
-    cfgAlertSec.value = typeof gen.defaultAlertSeconds !== 'undefined' ? gen.defaultAlertSeconds : 0;
+
+    // Preenche os 3 tempos de alerta
+    const alertTimes = gen.alertTimes || [
+      { minutes: typeof gen.defaultAlertMinutes !== 'undefined' ? gen.defaultAlertMinutes : 15, seconds: gen.defaultAlertSeconds || 0, enabled: true },
+      { minutes: 5, seconds: 0, enabled: true },
+      { minutes: 0, seconds: 0, enabled: true }
+    ];
+
+    if (alertTimes[0]) {
+      cfgAlert1Enable.checked = alertTimes[0].enabled !== false;
+      cfgAlert1Min.value = typeof alertTimes[0].minutes !== 'undefined' ? alertTimes[0].minutes : 15;
+      cfgAlert1Sec.value = alertTimes[0].seconds || 0;
+    }
+    if (alertTimes[1]) {
+      cfgAlert2Enable.checked = alertTimes[1].enabled !== false;
+      cfgAlert2Min.value = typeof alertTimes[1].minutes !== 'undefined' ? alertTimes[1].minutes : 5;
+      cfgAlert2Sec.value = alertTimes[1].seconds || 0;
+    }
+    if (alertTimes[2]) {
+      cfgAlert3Enable.checked = alertTimes[2].enabled !== false;
+      cfgAlert3Min.value = typeof alertTimes[2].minutes !== 'undefined' ? alertTimes[2].minutes : 0;
+      cfgAlert3Sec.value = alertTimes[2].seconds || 0;
+    }
+
     cfgAlertSound.value = gen.alertSound || 'acorda-menina';
     cfgAlertVolume.value = typeof gen.alertVolume !== 'undefined' ? gen.alertVolume : 90;
     volumeLabel.textContent = `${cfgAlertVolume.value}%`;
@@ -478,11 +508,30 @@ btnSyncNow.addEventListener('click', async () => {
 btnSave.addEventListener('click', async () => {
   if (!window.api) return;
 
+  const alertTimesConfig = [
+    {
+      enabled: cfgAlert1Enable.checked,
+      minutes: parseInt(cfgAlert1Min.value, 10) || 0,
+      seconds: parseInt(cfgAlert1Sec.value, 10) || 0
+    },
+    {
+      enabled: cfgAlert2Enable.checked,
+      minutes: parseInt(cfgAlert2Min.value, 10) || 0,
+      seconds: parseInt(cfgAlert2Sec.value, 10) || 0
+    },
+    {
+      enabled: cfgAlert3Enable.checked,
+      minutes: parseInt(cfgAlert3Min.value, 10) || 0,
+      seconds: parseInt(cfgAlert3Sec.value, 10) || 0
+    }
+  ];
+
   const newConfig = {
     general: {
       startup: cfgStartup.checked,
-      defaultAlertMinutes: parseInt(cfgAlertMin.value, 10) || 0,
-      defaultAlertSeconds: parseInt(cfgAlertSec.value, 10) || 0,
+      defaultAlertMinutes: parseInt(cfgAlert1Min.value, 10) || 15,
+      defaultAlertSeconds: parseInt(cfgAlert1Sec.value, 10) || 0,
+      alertTimes: alertTimesConfig,
       alertSound: cfgAlertSound.value,
       alertVolume: parseInt(cfgAlertVolume.value, 10) || 90,
       soundRepeatMode: cfgSoundRepeat.value || 'until-closed',

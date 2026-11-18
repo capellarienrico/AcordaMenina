@@ -9,8 +9,13 @@ class Store {
     this.defaults = {
       general: {
         startup: true,
-        defaultAlertMinutes: 1,
+        defaultAlertMinutes: 15,
         defaultAlertSeconds: 0,
+        alertTimes: [
+          { minutes: 15, seconds: 0, enabled: true },
+          { minutes: 5, seconds: 0, enabled: true },
+          { minutes: 0, seconds: 0, enabled: true }
+        ],
         alertSound: 'acorda-menina',
         alertVolume: 90,
         soundRepeatMode: 'until-closed',
